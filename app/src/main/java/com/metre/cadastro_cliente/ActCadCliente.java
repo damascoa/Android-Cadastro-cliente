@@ -79,13 +79,13 @@ public class ActCadCliente extends AppCompatActivity {
         if(rest = isCampoVazio(nome)){
             edtNome.requestFocus();
         }else{
-            if(rest =isCampoVazio(endereco)){
+            if(rest = isCampoVazio(endereco)){
                 edtEndereco.requestFocus();
             }else{
                 if( rest = isCampoVazio(telefone)){
                     edtTelefone.requestFocus();
                 }else{
-                    if(rest != isEmailValido(email)){
+                    if(rest = !isEmailValido(email)){
                         edtEmail.requestFocus();
                     }
                 }
@@ -93,9 +93,9 @@ public class ActCadCliente extends AppCompatActivity {
         }
         if(rest){
             AlertDialog.Builder dlg = new AlertDialog.Builder(this);
-            dlg.setTitle("Aviso");
-            dlg.setMessage("Há campos inválidos ou vazios!");
-            dlg.setNeutralButton("OK",null);
+            dlg.setTitle(R.string.title_aviso);
+            dlg.setMessage(R.string.message_campos_invalidos);
+            dlg.setNeutralButton(R.string.lbl_ok,null);
             dlg.show();
         }
     }
