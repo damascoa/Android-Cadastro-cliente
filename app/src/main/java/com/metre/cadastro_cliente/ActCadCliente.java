@@ -1,6 +1,9 @@
 package com.metre.cadastro_cliente;
 
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
@@ -16,12 +19,21 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class ActCadCliente extends AppCompatActivity {
+import com.metre.cadastro_cliente.database.DadosOpenHelper;
+import com.metre.cadastro_cliente.dominio.entidades.Cliente;
+import com.metre.cadastro_cliente.dominio.repositorio.ClienteRepositorio;
 
+public class ActCadCliente extends AppCompatActivity {
+    private ConstraintLayout layoutContextCliente;
     private EditText edtNome;
     private EditText edtEndereco;
     private EditText edtTelefone;
     private EditText edtEmail;
+
+    private SQLiteDatabase conexao;
+    private DadosOpenHelper dadosHelper;
+    private ClienteRepositorio clienteRepositorio;
+    private Cliente cliente;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,11 +42,17 @@ public class ActCadCliente extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        layoutContextCliente = findViewById(R.id.layoutContextCliente);
 
         edtNome = findViewById(R.id.edtNome);
         edtEndereco = findViewById(R.id.edtEndereco);
         edtEmail = findViewById(R.id.edtEmail);
         edtTelefone = findViewById(R.id.edtTelefone);
+
+
+
+        criarConexao();
+
 
 
     }
@@ -51,13 +69,9 @@ public class ActCadCliente extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        System.out.println("ID::::::::::::::::::::::::::::::"+id);
-        System.out.println("OK::::::::::::::::::::::::::::::"+R.id.action_ok);
-        System.out.println("CA::::::::::::::::::::::::::::::"+R.id.action_cancelar);
         switch (id){
             case R.id.action_ok:
-                validarCampos();
-                Toast.makeText(this,"OK SELECIONADO",Toast.LENGTH_SHORT).show();
+                confirmar();
                 break;
             case R.id.action_cancelar:
                 Toast.makeText(this,"CANCELAR SELECIONADO",Toast.LENGTH_SHORT).show();
@@ -68,14 +82,31 @@ public class ActCadCliente extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void validarCampos(){
+    private void confirmar(){
+        cliente = new Cliente();
+        if(!validarCampos()){
+            try {
+                clienteRepositorio.inserir(cliente);
+            }catch (SQLException e){
+                e.printStackTrace();
+
+            }
+
+        }
+    }
+
+    private boolean validarCampos(){
         boolean rest = false;
         String nome = edtNome.getText().toString();
-
         String telefone = edtTelefone.getText().toString();
         String endereco = edtEndereco.getText().toString();
-
         String email = edtEmail.getText().toString();
+
+        cliente.nome = nome;
+        cliente.telefone = telefone;
+        cliente.endereco = endereco;
+        cliente.email = email;
+
         if(rest = isCampoVazio(nome)){
             edtNome.requestFocus();
         }else{
@@ -97,7 +128,9 @@ public class ActCadCliente extends AppCompatActivity {
             dlg.setMessage(R.string.message_campos_invalidos);
             dlg.setNeutralButton(R.string.lbl_ok,null);
             dlg.show();
+            return rest;
         }
+        return rest;
     }
 
     private boolean isCampoVazio(String valor){
@@ -106,7 +139,27 @@ public class ActCadCliente extends AppCompatActivity {
 
     private boolean isEmailValido(String email){
         System.out.println("EMAIL È VALIDO: "+Patterns.EMAIL_ADDRESS.matcher(email).matches());
-        System.out.println("EMAIL È VAZIOO: "+!isCampoVazio(email));
+        System.out.println("EMAIL È VAZIOO: "+isCampoVazio(email));
         return !isCampoVazio(email) && Patterns.EMAIL_ADDRESS.matcher(email).matches();
+    }
+
+
+
+    private void criarConexao(){
+        try {
+            dadosHelper = new DadosOpenHelper(this);
+            conexao = dadosHelper.getWritableDatabase();
+
+            Snackbar.make(layoutContextCliente,R.string.message_coexao_sucesso, Snackbar.LENGTH_SHORT)
+                    .setAction("OK",null).show();
+            clienteRepositorio = new ClienteRepositorio(conexao);
+        }catch (Exception e){
+            e.printStackTrace();
+            AlertDialog.Builder dlg = new AlertDialog.Builder(this);
+            dlg.setTitle("Erro");
+            dlg.setMessage(e.getMessage());
+            dlg.setNeutralButton("OK",null);
+            dlg.show();
+        }
     }
 }
